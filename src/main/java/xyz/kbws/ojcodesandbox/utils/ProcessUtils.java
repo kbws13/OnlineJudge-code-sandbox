@@ -1,5 +1,6 @@
 package xyz.kbws.ojcodesandbox.utils;
 
+import org.springframework.util.StopWatch;
 import xyz.kbws.ojcodesandbox.model.ExecuteMessage;
 
 import java.io.BufferedReader;
@@ -21,6 +22,8 @@ public class ProcessUtils {
     public static ExecuteMessage runProcessAndGetMessage(Process runProcess, String opName) {
         ExecuteMessage executeMessage = new ExecuteMessage();
         try {
+            StopWatch stopWatch = new StopWatch();
+            stopWatch.start();
             // 等待程序执行，获取错误码
             int exitValue = runProcess.waitFor();
             executeMessage.setExitValue(exitValue);
@@ -59,6 +62,8 @@ public class ProcessUtils {
                 }
                 executeMessage.setErrorMessage(errorCompileOutputStringBuilder.toString());
             }
+            stopWatch.stop();
+            executeMessage.setTime(stopWatch.getLastTaskTimeMillis());
         } catch (Exception e) {
             e.printStackTrace();
         }
