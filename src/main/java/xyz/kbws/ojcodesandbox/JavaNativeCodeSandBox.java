@@ -64,10 +64,10 @@ public class JavaNativeCodeSandBox implements CodeSandBox {
             ExecuteMessage executeMessage = ProcessUtils.runProcessAndGetMessage(compileProcess, "编译");
             System.out.println(executeMessage);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            return getErrorResponse(e);
         }
 
-        // 执行代码，获得输出结果
+        // 执行代码，获得 class 文件
         List<ExecuteMessage> executeMessageList = new ArrayList<>();
         for (String inputArgs : inputList) {
             String runCmd = String.format("java -Dfile.encoding=UTF-8 -cp %s Main %s", userCodeParentPath, inputArgs);
@@ -77,7 +77,7 @@ public class JavaNativeCodeSandBox implements CodeSandBox {
                 System.out.println(executeMessage);
                 executeMessageList.add(executeMessage);
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                return getErrorResponse(e);
             }
         }
 
@@ -90,7 +90,7 @@ public class JavaNativeCodeSandBox implements CodeSandBox {
             String errorMessage = executeMessage.getErrorMessage();
             if (StrUtil.isNotBlank(errorMessage)) {
                 executeCodeResponse.setMessage(errorMessage);
-                // 执行中存在错误
+                // 程序执行错误
                 executeCodeResponse.setStatus(3);
                 break;
             }
@@ -118,6 +118,21 @@ public class JavaNativeCodeSandBox implements CodeSandBox {
         }
 
 
+        return executeCodeResponse;
+    }
+
+    /**
+     * 获取错误响应
+     * @param e 异常
+     * @return ExecuteCodeResponse
+     */
+    private ExecuteCodeResponse getErrorResponse(Throwable e) {
+        ExecuteCodeResponse executeCodeResponse = new ExecuteCodeResponse();
+        executeCodeResponse.setOutputList(new ArrayList<>());
+        executeCodeResponse.setMessage(e.getMessage());
+        // 2表达式代码沙箱错误
+        executeCodeResponse.setStatus(2);
+        executeCodeResponse.setJudgeInfo(new JudgeInfo());
         return executeCodeResponse;
     }
 }
