@@ -1,19 +1,15 @@
 package xyz.kbws.ojcodesandbox;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.io.resource.Resource;
 import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.lang.UUID;
-import org.springframework.util.ResourceUtils;
 import xyz.kbws.ojcodesandbox.model.ExecuteCodeRequest;
 import xyz.kbws.ojcodesandbox.model.ExecuteCodeResponse;
 import xyz.kbws.ojcodesandbox.model.ExecuteMessage;
 import xyz.kbws.ojcodesandbox.utils.ProcessUtils;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -47,7 +43,7 @@ public class JavaNativeCodeSandBox implements CodeSandBox {
         String language = executeCodeRequest.getLanguage();
 
         String userDir = System.getProperty("user.dir");
-        String globalCodePathName = userDir + File.separator + "tmpCode";
+        String globalCodePathName = userDir + File.separator + GLOBAL_CODE_DIR_NAME;
         // 判断全局代码目录是否存在，没有则新建
         if (!FileUtil.exist(globalCodePathName)) {
             FileUtil.mkdir(globalCodePathName);
