@@ -4,8 +4,6 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.StrUtil;
-import org.springframework.util.StopWatch;
-import org.springframework.util.StringUtils;
 import xyz.kbws.ojcodesandbox.model.ExecuteCodeRequest;
 import xyz.kbws.ojcodesandbox.model.ExecuteCodeResponse;
 import xyz.kbws.ojcodesandbox.model.ExecuteMessage;
@@ -112,6 +110,12 @@ public class JavaNativeCodeSandBox implements CodeSandBox {
         //judgeInfo.setMemory();
         judgeInfo.setTime(maxTime);
         executeCodeResponse.setJudgeInfo(judgeInfo);
+
+        // 文件清理
+        if (userCodeFile.getParentFile() != null) {
+            boolean del = FileUtil.del(userCodeParentPath);
+            System.out.println("删除" + (del ? "成功" : "失败"));
+        }
 
 
         return executeCodeResponse;
