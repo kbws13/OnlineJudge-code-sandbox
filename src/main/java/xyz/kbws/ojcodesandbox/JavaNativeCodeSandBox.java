@@ -4,6 +4,8 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.dfa.FoundWord;
+import cn.hutool.dfa.WordTree;
 import xyz.kbws.ojcodesandbox.model.ExecuteCodeRequest;
 import xyz.kbws.ojcodesandbox.model.ExecuteCodeResponse;
 import xyz.kbws.ojcodesandbox.model.ExecuteMessage;
@@ -28,6 +30,15 @@ public class JavaNativeCodeSandBox implements CodeSandBox {
 
     private static final String GLOBAL_JAVA_CLASS_NAME = "Main.java";
 
+    private static final List<String> blackList = Arrays.asList("Files", "exec");
+
+    private static final WordTree wordTree;
+
+    static {
+        wordTree = new WordTree();
+        wordTree.addWords(blackList);
+    }
+
     public static void main(String[] args) {
         JavaNativeCodeSandBox javaNativeCodeSandBox = new JavaNativeCodeSandBox();
         ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
@@ -44,6 +55,13 @@ public class JavaNativeCodeSandBox implements CodeSandBox {
         List<String> inputList = executeCodeRequest.getInputList();
         String code = executeCodeRequest.getCode();
         String language = executeCodeRequest.getLanguage();
+
+        // 校验代码
+        FoundWord foundWord = wordTree.matchWord(code);
+        if (foundWord != null) {
+            System.out.println(foundWord.getFoundWord());
+            return null;
+        }
 
         String userDir = System.getProperty("user.dir");
         String globalCodePathName = userDir + File.separator + GLOBAL_CODE_DIR_NAME;
