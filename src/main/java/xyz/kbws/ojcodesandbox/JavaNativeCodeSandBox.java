@@ -10,6 +10,7 @@ import xyz.kbws.ojcodesandbox.model.ExecuteCodeRequest;
 import xyz.kbws.ojcodesandbox.model.ExecuteCodeResponse;
 import xyz.kbws.ojcodesandbox.model.ExecuteMessage;
 import xyz.kbws.ojcodesandbox.model.JudgeInfo;
+import xyz.kbws.ojcodesandbox.security.DefaultSecurityManager;
 import xyz.kbws.ojcodesandbox.utils.ProcessUtils;
 
 import java.io.File;
@@ -34,6 +35,10 @@ public class JavaNativeCodeSandBox implements CodeSandBox {
 
     private static final WordTree wordTree;
 
+    private static final String SECURITY_MANAGER = "D:\\Data\\Project\\OnlineJudge\\oj-code-sandbox\\src\\main\\resources";
+
+    private static final String SECURITY_MANAGER_CLASS_NAME = "MySecurityManager";
+
     static {
         wordTree = new WordTree();
         wordTree.addWords(blackList);
@@ -52,16 +57,18 @@ public class JavaNativeCodeSandBox implements CodeSandBox {
 
     @Override
     public ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest) {
+        System.setSecurityManager(new DefaultSecurityManager());
+
         List<String> inputList = executeCodeRequest.getInputList();
         String code = executeCodeRequest.getCode();
         String language = executeCodeRequest.getLanguage();
 
         // 校验代码
-        FoundWord foundWord = wordTree.matchWord(code);
-        if (foundWord != null) {
-            System.out.println(foundWord.getFoundWord());
-            return null;
-        }
+        //FoundWord foundWord = wordTree.matchWord(code);
+        //if (foundWord != null) {
+        //    System.out.println(foundWord.getFoundWord());
+        //    return null;
+        //}
 
         String userDir = System.getProperty("user.dir");
         String globalCodePathName = userDir + File.separator + GLOBAL_CODE_DIR_NAME;
@@ -88,7 +95,7 @@ public class JavaNativeCodeSandBox implements CodeSandBox {
         // 执行代码，获得 class 文件
         List<ExecuteMessage> executeMessageList = new ArrayList<>();
         for (String inputArgs : inputList) {
-            String runCmd = String.format("java -Dfile.encoding=UTF-8 -cp %s Main %s", userCodeParentPath, inputArgs);
+            String runCmd = String.format("java -Dfile.encoding=UTF-8 -cp %s;%s -Djava.security.manager=%s Main %s", userCodeParentPath, SECURITY_MANAGER, SECURITY_MANAGER_CLASS_NAME, inputArgs);
             try {
                 Process runProcess = Runtime.getRuntime().exec(runCmd);
                 ExecuteMessage executeMessage = ProcessUtils.runProcessAndGetMessage(runProcess, "运行");
@@ -141,6 +148,7 @@ public class JavaNativeCodeSandBox implements CodeSandBox {
 
     /**
      * 获取错误响应
+     *
      * @param e 异常
      * @return ExecuteCodeResponse
      */
