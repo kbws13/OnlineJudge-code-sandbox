@@ -64,11 +64,11 @@ public class JavaNativeCodeSandBox implements CodeSandBox {
         String language = executeCodeRequest.getLanguage();
 
         // 校验代码
-        //FoundWord foundWord = wordTree.matchWord(code);
-        //if (foundWord != null) {
-        //    System.out.println(foundWord.getFoundWord());
-        //    return null;
-        //}
+        FoundWord foundWord = wordTree.matchWord(code);
+        if (foundWord != null) {
+            System.out.println(foundWord.getFoundWord());
+            return null;
+        }
 
         String userDir = System.getProperty("user.dir");
         String globalCodePathName = userDir + File.separator + GLOBAL_CODE_DIR_NAME;
