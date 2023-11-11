@@ -9,6 +9,8 @@ import xyz.kbws.ojcodesandbox.model.ExecuteCodeRequest;
 import xyz.kbws.ojcodesandbox.model.ExecuteCodeResponse;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author kbws
@@ -17,6 +19,11 @@ import javax.annotation.Resource;
  */
 @RestController("/")
 public class MainController {
+
+    // 定义鉴权请求头和密钥
+    public static final String AUTH_REQUEST_HEADER = "auth";
+
+    public static final String AUTH_REQUEST_SECRET = "secret";
 
     @Resource
     private JavaNativeCodeSandbox javaNativeCodeSandbox;
@@ -32,7 +39,14 @@ public class MainController {
      * @return
      */
     @PostMapping("/executeCode")
-    public ExecuteCodeResponse executeCode(@RequestBody ExecuteCodeRequest executeCodeRequest) {
+    public ExecuteCodeResponse executeCode(@RequestBody ExecuteCodeRequest executeCodeRequest,
+                                           HttpServletRequest request, HttpServletResponse response) {
+        String authHeader = request.getHeader(AUTH_REQUEST_HEADER);
+        // 基本的认证
+        if (!AUTH_REQUEST_SECRET.equals(authHeader)) {
+            response.setStatus(403);
+            return null;
+        }
         if (executeCodeRequest == null) {
             throw new RuntimeException("请求参数为空");
         }

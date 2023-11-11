@@ -7,6 +7,7 @@ import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 import xyz.kbws.ojcodesandbox.model.ExecuteMessage;
 
@@ -23,6 +24,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/11/3
  * @description: Java使用Docker实现代码沙箱（复用模板）
  */
+@Component
 public class JavaDockerCodeSandBox extends JavaCodeSandboxTemplate {
 
     public static final long TIME_OUT = 5000L;
