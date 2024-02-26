@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 import xyz.kbws.ojcodesandbox.JavaNativeCodeSandbox;
 import xyz.kbws.ojcodesandbox.model.ExecuteCodeRequest;
 import xyz.kbws.ojcodesandbox.model.ExecuteCodeResponse;
+import static xyz.kbws.ojcodesandbox.constants.AuthRequest.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -19,11 +20,6 @@ import javax.servlet.http.HttpServletResponse;
  */
 @RestController("/")
 public class MainController {
-
-    // 定义鉴权请求头和密钥
-    public static final String AUTH_REQUEST_HEADER = "auth";
-
-    public static final String AUTH_REQUEST_SECRET = "secret";
 
     @Resource
     private JavaNativeCodeSandbox javaNativeCodeSandbox;
