@@ -4,7 +4,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import xyz.kbws.ojcodesandbox.JavaNativeCodeSandbox;
+import xyz.kbws.ojcodesandbox.template.JavaNativeCodeSandbox;
 import xyz.kbws.ojcodesandbox.model.ExecuteCodeRequest;
 import xyz.kbws.ojcodesandbox.model.ExecuteCodeResponse;
 import static xyz.kbws.ojcodesandbox.constants.AuthRequest.*;

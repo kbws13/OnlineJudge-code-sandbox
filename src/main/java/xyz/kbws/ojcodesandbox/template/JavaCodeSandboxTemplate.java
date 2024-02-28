@@ -1,9 +1,10 @@
-package xyz.kbws.ojcodesandbox;
+package xyz.kbws.ojcodesandbox.template;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
+import xyz.kbws.ojcodesandbox.CodeSandBox;
 import xyz.kbws.ojcodesandbox.model.ExecuteCodeRequest;
 import xyz.kbws.ojcodesandbox.model.ExecuteCodeResponse;
 import xyz.kbws.ojcodesandbox.model.ExecuteMessage;
@@ -39,6 +40,7 @@ public abstract class JavaCodeSandboxTemplate implements CodeSandBox {
 
 //        2. 编译代码，得到 class 文件
         ExecuteMessage compileFileExecuteMessage = compileFile(userCodeFile);
+        log.info("编译后信息：{}", compileFileExecuteMessage);
 
         // 3. 执行代码，得到输出结果
         List<ExecuteMessage> executeMessageList = runFile(userCodeFile, inputList);
@@ -124,7 +126,7 @@ public abstract class JavaCodeSandboxTemplate implements CodeSandBox {
                     }
                 }).start();
                 ExecuteMessage executeMessage = ProcessUtils.runProcessAndGetMessage(runProcess, "运行");
-                System.out.println(executeMessage);
+                System.out.println("代码程序执行信息：" + executeMessage);
                 executeMessageList.add(executeMessage);
             } catch (Exception e) {
                 throw new RuntimeException("执行错误", e);
@@ -181,7 +183,7 @@ public abstract class JavaCodeSandboxTemplate implements CodeSandBox {
         if (userCodeFile.getParentFile() != null) {
             String userCodeParentPath = userCodeFile.getParentFile().getAbsolutePath();
             boolean del = FileUtil.del(userCodeParentPath);
-            System.out.println("删除" + (del ? "成功" : "失败"));
+            log.info("删除" + (del ? "成功" : "失败"));
             return del;
         }
         return true;

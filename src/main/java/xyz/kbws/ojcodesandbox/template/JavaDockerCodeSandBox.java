@@ -1,5 +1,6 @@
-package xyz.kbws.ojcodesandbox;
+package xyz.kbws.ojcodesandbox.template;
 
+import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.util.ArrayUtil;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
@@ -64,50 +65,60 @@ public class JavaDockerCodeSandBox extends JavaCodeSandboxTemplate {
         // 创建容器
         CreateContainerCmd containerCmd = dockerClient.createContainerCmd(image);
         HostConfig hostConfig = new HostConfig();
+        // 限制内存
         hostConfig.withMemory(100 * 1000 * 1000L);
-        hostConfig.withMemorySwap(0L);
+        // 内存交换
+        hostConfig.withMemorySwap(1000L);
+        // 设置CPU
         hostConfig.withCpuCount(1L);
-        hostConfig.withSecurityOpts(Arrays.asList("seccomp=安全管理配置字符串"));
+        // 设置安全管理 读写权限
+        String profileConfig = ResourceUtil.readUtf8Str("profile.json");
+        hostConfig.withSecurityOpts(Arrays.asList("seccomp=" + profileConfig));
+        // 设置容器挂载目录
         hostConfig.setBinds(new Bind(userCodeParentPath, new Volume("/app")));
         CreateContainerResponse createContainerResponse = containerCmd
                 .withHostConfig(hostConfig)
-                .withNetworkDisabled(true)
+                .withNetworkDisabled(true) // 禁用网络
                 .withReadonlyRootfs(true)
-                .withAttachStderr(true)
+                .withAttachStderr(true) // 开启输入输出
                 .withAttachStdin(true)
                 .withAttachStdout(true)
-                .withTty(true)
+                .withTty(true) // 开启一个交互终端
                 .exec();
         System.out.println(createContainerResponse);
+        // 创建容器id
         String containerId = createContainerResponse.getId();
-
-
         // 启动容器
         dockerClient.startContainerCmd(containerId).exec();
 
-        // docker exec hungry_lewin java -cp /app Main 1 3
+        // docker exec containtId java -cp /app Main 1 2
         // 执行命令并获取结果
-        List<ExecuteMessage> executeMessageList = new ArrayList<>();
+        ArrayList<ExecuteMessage> executeMessageList = new ArrayList<>();
+        StopWatch stopWatch = new StopWatch();
+        // 最大内存占用
+        final long[] maxMemory = {0L};
+        // 设置执行消息
+        ExecuteMessage executeMessage = new ExecuteMessage();
+        final String[] message = {null};
+        final String[] errorMessage = {null};
+        long time = 0L;
         for (String inputArgs : inputList) {
-            StopWatch stopWatch = new StopWatch();
             String[] inputArgsArray = inputArgs.split(" ");
             String[] cmdArray = ArrayUtil.append(new String[]{"java", "-cp", "/app", "Main"}, inputArgsArray);
             ExecCreateCmdResponse execCreateCmdResponse = dockerClient.execCreateCmd(containerId)
                     .withCmd(cmdArray)
-                    .withAttachStderr(true)
+                    .withAttachStderr(true) // 开启输入输出
                     .withAttachStdin(true)
                     .withAttachStdout(true)
                     .exec();
             System.out.println("创建执行命令:" + execCreateCmdResponse);
 
-
-            ExecuteMessage executeMessage = new ExecuteMessage();
-            final String[] message = {null};
-            final String[] errorMessage = {null};
-            long time = 0L;
             // 判断是否超时
             final boolean[] timeout = {true};
             String execId = execCreateCmdResponse.getId();
+            if (execId == null) {
+                throw new RuntimeException("执行命令不存在");
+            }
             ExecStartResultCallback execStartResultCallback = new ExecStartResultCallback() {
 
                 @Override
@@ -131,8 +142,6 @@ public class JavaDockerCodeSandBox extends JavaCodeSandboxTemplate {
                 }
             };
 
-            final long[] maxMemory = {0L};
-
             // 获取占用的内存
             StatsCmd statsCmd = dockerClient.statsCmd(containerId);
             ResultCallback<Statistics> statisticsResultCallback = statsCmd.exec(new ResultCallback<Statistics>() {
@@ -143,8 +152,9 @@ public class JavaDockerCodeSandBox extends JavaCodeSandboxTemplate {
 
                 @Override
                 public void onNext(Statistics statistics) {
-                    System.out.println("内存占用:" + statistics.getMemoryStats().getUsage());
-                    maxMemory[0] = Math.max(statistics.getMemoryStats().getUsage(), maxMemory[0]);
+                    Long usageMemory = statistics.getMemoryStats().getUsage();
+                    System.out.println("内存占用:" + usageMemory);
+                    maxMemory[0] = Math.max(usageMemory, maxMemory[0]);
                 }
 
                 @Override
@@ -165,12 +175,17 @@ public class JavaDockerCodeSandBox extends JavaCodeSandboxTemplate {
             statsCmd.exec(statisticsResultCallback);
 
             try {
+                // 执行启动命令
+                // 开始前获取时间
                 stopWatch.start();
                 dockerClient.execStartCmd(execId)
                         .exec(execStartResultCallback)
                         .awaitCompletion(TIME_OUT, TimeUnit.MICROSECONDS);
+                // 结束计时
                 stopWatch.stop();
+                // 获取总共时间
                 time = stopWatch.getLastTaskTimeMillis();
+                // 关闭统计
                 statsCmd.close();
             } catch (InterruptedException e) {
                 System.out.println("程序执行异常");

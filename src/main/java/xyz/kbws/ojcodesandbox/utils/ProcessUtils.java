@@ -1,11 +1,11 @@
 package xyz.kbws.ojcodesandbox.utils;
 
+import cn.hutool.core.util.StrUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.StopWatch;
 import xyz.kbws.ojcodesandbox.model.ExecuteMessage;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -66,6 +66,46 @@ public class ProcessUtils {
             }
             stopWatch.stop();
             executeMessage.setTime(stopWatch.getLastTaskTimeMillis());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return executeMessage;
+    }
+
+    /**
+     * 交互式执行进程并获取进程信息
+     *
+     * @param runProcess
+     * @return
+     */
+    public static ExecuteMessage runInteractProcessAndGetMessage(Process runProcess, String args) {
+        ExecuteMessage executeMessage = new ExecuteMessage();
+
+        try {
+            // 从控制台输入参数
+            OutputStream outputStream = runProcess.getOutputStream();
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream);
+            String[] arguments = args.split(" ");
+            String join = StrUtil.join("\n", arguments) + "\n";
+            outputStreamWriter.write(join);
+            // 回车，发送参数
+            outputStreamWriter.flush();
+
+            // 通过进程获取正常输出到控制台的信息
+            InputStream inputStream = runProcess.getInputStream();
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+            StringBuilder compileOutputStringBuilder = new StringBuilder();
+            // 逐行读取
+            String compileOutputLine;
+            while ((compileOutputLine = bufferedReader.readLine()) != null) {
+                compileOutputStringBuilder.append(compileOutputLine);
+            }
+            executeMessage.setMessage(compileOutputStringBuilder.toString());
+            // 释放资源
+            outputStream.close();
+            outputStreamWriter.close();
+            inputStream.close();
+            runProcess.destroy();
         } catch (Exception e) {
             e.printStackTrace();
         }

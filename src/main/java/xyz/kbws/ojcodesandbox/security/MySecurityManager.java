@@ -5,12 +5,13 @@ import java.security.Permission;
 /**
  * @author kbws
  * @date 2023/11/5
- * @description: 安全管理器
+ * @description: 细粒度的安全管理器
  */
 public class MySecurityManager extends SecurityManager{
     // 检查所有的权限
     @Override
     public void checkPermission(Permission perm) {
+        System.out.println("存在请求权限：" + perm.toString());
 //        super.checkPermission(perm);
     }
 
@@ -24,10 +25,6 @@ public class MySecurityManager extends SecurityManager{
 
     @Override
     public void checkRead(String file) {
-        System.out.println(file);
-        if (file.contains("C:\\code\\yuoj-code-sandbox")) {
-            return;
-        }
 //        throw new SecurityException("checkRead 权限异常：" + file);
     }
 
