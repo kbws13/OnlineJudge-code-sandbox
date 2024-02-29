@@ -1,6 +1,14 @@
+# 公共配置文件
 spring:
-  profiles:
-    active: prod
+  application:
+    name: K-OJ
+
+  banner:
+    location: static/banner.txt
+  # 支持 swagger3
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
 
 server:
   port: 8090
