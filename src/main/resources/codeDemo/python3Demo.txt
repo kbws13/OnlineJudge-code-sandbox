@@ -1,0 +1,14 @@
+# calculate.py
+import sys
+def main():
+    if len(sys.argv) != 3:
+        print("Usage: python calculate.py <a> <b>")
+        return
+    a = int(sys.argv[1])
+    b = int(sys.argv[2])
+    result = calculate_sum(a, b)
+    print(result)
+def calculate_sum(a, b):
+    return a + b
+if __name__ == "__main__":
+    main()
