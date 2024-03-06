@@ -1,4 +1,4 @@
-package xyz.kbws.ojcodesandbox.template;
+package xyz.kbws.ojcodesandbox.service.java;
 
 import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.util.ArrayUtil;
@@ -10,11 +10,14 @@ import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
+import xyz.kbws.ojcodesandbox.model.ExecuteCodeRequest;
+import xyz.kbws.ojcodesandbox.model.ExecuteCodeResponse;
 import xyz.kbws.ojcodesandbox.model.ExecuteMessage;
 
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -45,7 +48,7 @@ public class JavaDockerCodeSandBox extends JavaCodeSandboxTemplate {
         // 获取默认的 DockerClient
         DockerClient dockerClient = DockerClientBuilder.getInstance().build();
         // 拉取镜像
-        String image = "openjdk:8-alpine";
+        String image = "openjdk:8-jdk";
         if (FIRST_INIT) {
             PullImageCmd pullImageCmd = dockerClient.pullImageCmd(image);
             PullImageResultCallback pullImageResultCallback = new PullImageResultCallback() {

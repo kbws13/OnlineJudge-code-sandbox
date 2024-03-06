@@ -10,5 +10,5 @@ public interface AuthRequest {
     String AUTH_REQUEST_HEADER = "auth";
 
     // 密钥
-    String AUTH_REQUEST_SECRET = "secretKey";
+    String AUTH_REQUEST_SECRET = "secret";
 }

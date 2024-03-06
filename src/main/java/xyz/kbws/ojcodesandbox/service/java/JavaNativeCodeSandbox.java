@@ -1,9 +1,9 @@
-package xyz.kbws.ojcodesandbox.template;
+package xyz.kbws.ojcodesandbox.service.java;
 
 import org.springframework.stereotype.Component;
 import xyz.kbws.ojcodesandbox.model.ExecuteCodeRequest;
 import xyz.kbws.ojcodesandbox.model.ExecuteCodeResponse;
-import xyz.kbws.ojcodesandbox.template.JavaCodeSandboxTemplate;
+import xyz.kbws.ojcodesandbox.service.java.JavaCodeSandboxTemplate;
 
 /**
  * @author kbws
