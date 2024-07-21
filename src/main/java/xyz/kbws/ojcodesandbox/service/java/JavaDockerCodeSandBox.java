@@ -6,7 +6,9 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.*;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
+import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
@@ -50,36 +52,27 @@ public class JavaDockerCodeSandBox extends JavaCodeSandboxTemplate {
         // 拉取镜像
         String image = "openjdk:8-jdk";
         if (FIRST_INIT) {
-            PullImageCmd pullImageCmd = dockerClient.pullImageCmd(image);
-            PullImageResultCallback pullImageResultCallback = new PullImageResultCallback() {
-                @Override
-                public void onNext(PullResponseItem item) {
-                    super.onNext(item);
-                }
-            };
             try {
-                pullImageCmd.exec(pullImageResultCallback).awaitCompletion();
+                dockerClient.pullImageCmd(image).exec(new PullImageResultCallback()).awaitCompletion();
             } catch (InterruptedException e) {
-                System.out.println("拉取镜像异常");
-                throw new RuntimeException(e);
+                throw new RuntimeException("拉取镜像异常", e);
             }
         }
 
         // 创建容器
-        CreateContainerCmd containerCmd = dockerClient.createContainerCmd(image);
-        HostConfig hostConfig = new HostConfig();
-        // 限制内存
-        hostConfig.withMemory(100 * 1000 * 1000L);
-        // 内存交换
-        hostConfig.withMemorySwap(1000L);
-        // 设置CPU
-        hostConfig.withCpuCount(1L);
-        // 设置安全管理 读写权限
-        String profileConfig = ResourceUtil.readUtf8Str("profile.json");
-        hostConfig.withSecurityOpts(Arrays.asList("seccomp=" + profileConfig));
-        // 设置容器挂载目录
-        hostConfig.setBinds(new Bind(userCodeParentPath, new Volume("/app")));
-        CreateContainerResponse createContainerResponse = containerCmd
+        HostConfig hostConfig = new HostConfig()
+                // 限制内存
+                .withMemory(100 * 1000 * 1000L)
+                // 内存交换
+                .withMemorySwap(1000L)
+                // 设置CPU
+                .withCpuCount(1L)
+                // 设置安全管理 读写权限
+                .withSecurityOpts(Arrays.asList("seccomp=" + ResourceUtil.readUtf8Str("profile.json")))
+                // 设置容器挂载目录
+                .withBinds(new Bind(userCodeParentPath, new Volume("/app")));
+
+        CreateContainerResponse createContainerResponse = dockerClient.createContainerCmd(image)
                 .withHostConfig(hostConfig)
                 .withNetworkDisabled(true) // 禁用网络
                 .withReadonlyRootfs(true)
@@ -94,9 +87,8 @@ public class JavaDockerCodeSandBox extends JavaCodeSandboxTemplate {
         // 启动容器
         dockerClient.startContainerCmd(containerId).exec();
 
-        // docker exec containtId java -cp /app Main 1 2
         // 执行命令并获取结果
-        ArrayList<ExecuteMessage> executeMessageList = new ArrayList<>();
+        List<ExecuteMessage> executeMessageList = new ArrayList<>();
         StopWatch stopWatch = new StopWatch();
         // 最大内存占用
         final long[] maxMemory = {0L};
