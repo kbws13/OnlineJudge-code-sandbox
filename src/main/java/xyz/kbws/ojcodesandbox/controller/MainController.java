@@ -60,18 +60,18 @@ public class MainController {
     @PostMapping("/run")
     public ExecuteCodeResponse executeCode(@RequestBody ExecuteCodeRequest executeCodeRequest,
                                            HttpServletRequest request, HttpServletResponse response) {
-        //String authHeader = request.getHeader(AUTH_REQUEST_HEADER);
+        String authHeader = request.getHeader(AUTH_REQUEST_HEADER);
         //// 基本的认证
-        //if (!AUTH_REQUEST_SECRET.equals(authHeader)) {
-        //    response.setStatus(403);
-        //    return new ExecuteCodeResponse(null, "身份校验失败！", QuestionSubmitStatusEnum.FAILED.getValue(), null);
-        //}
+        if (!AUTH_REQUEST_SECRET.equals(authHeader)) {
+            response.setStatus(403);
+            return new ExecuteCodeResponse(null, "身份校验失败！", QuestionSubmitStatusEnum.FAILED.getValue(), null);
+        }
         if (executeCodeRequest == null) {
             throw new RuntimeException("请求参数为空");
         }
         String language = executeCodeRequest.getLanguage();
         if (SupportLanguageEnum.JAVA.getValue().equals(language)) {
-            return javaDockerCodeSandBox.executeCode(executeCodeRequest);
+            return javaNativeCodeSandbox.executeCode(executeCodeRequest);
         }
         else if (SupportLanguageEnum.PYTHON3.getValue().equals(language)) {
             return python3NativeCodeSandbox.executeCode(executeCodeRequest);
