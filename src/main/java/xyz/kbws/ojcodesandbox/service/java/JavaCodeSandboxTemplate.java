@@ -1,6 +1,8 @@
 package xyz.kbws.ojcodesandbox.service.java;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StopWatch;
 import xyz.kbws.ojcodesandbox.model.ExecuteCodeRequest;
 import xyz.kbws.ojcodesandbox.model.ExecuteCodeResponse;
 import xyz.kbws.ojcodesandbox.model.ExecuteMessage;
@@ -12,6 +14,7 @@ import xyz.kbws.ojcodesandbox.service.CommonCodeSandboxTemplate;
 import xyz.kbws.ojcodesandbox.utils.ProcessUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,10 +46,10 @@ public abstract class JavaCodeSandboxTemplate extends CommonCodeSandboxTemplate 
         log.info("当前操作系统：" + System.getProperty("os.name").toLowerCase());
         log.info("当前代码使用语言：" + language);
 
-//        1. 把用户的代码保存为文件
+        // 1. 把用户的代码保存为文件
         File userCodeFile = saveCodeToFile(code, GLOBAL_CODE_DIR_NAME, GLOBAL_JAVA_CLASS_NAME);
 
-//        2. 编译代码，得到 class 文件
+        // 2. 编译代码，得到 class 文件
         ExecuteMessage compileFileExecuteMessage = compileFile(userCodeFile);
         log.info("编译后信息：{}", compileFileExecuteMessage);
         if (compileFileExecuteMessage.getErrorMessage() != null) {
@@ -57,10 +60,10 @@ public abstract class JavaCodeSandboxTemplate extends CommonCodeSandboxTemplate 
         // 3. 执行代码，得到输出结果
         List<ExecuteMessage> executeMessageList = runFile(userCodeFile, inputList);
 
-//        4. 收集整理输出结果
+        // 4. 收集整理输出结果
         ExecuteCodeResponse outputResponse = getOutputResponse(executeMessageList);
 
-//        5. 文件清理
+        // 5. 文件清理
         boolean b = deleteFile(userCodeFile);
         if (!b) {
             log.error("deleteFile error, userCodeFilePath = {}", userCodeFile.getAbsolutePath());
@@ -78,7 +81,7 @@ public abstract class JavaCodeSandboxTemplate extends CommonCodeSandboxTemplate 
         String compileCmd = String.format("javac -encoding utf-8 %s", userCodeFile.getAbsolutePath());
         try {
             Process compileProcess = Runtime.getRuntime().exec(compileCmd);
-            ExecuteMessage executeMessage = ProcessUtils.runProcessAndGetMessage(compileProcess, "编译");
+            ExecuteMessage executeMessage = ProcessUtils.getProcessMessage(compileProcess, "编译");
             if (executeMessage.getExitValue() != 0) {
                 executeMessage.setExitValue(1);
                 executeMessage.setMessage(JudgeInfoMessageEnum.COMPILE_ERROR.getText());
@@ -107,12 +110,14 @@ public abstract class JavaCodeSandboxTemplate extends CommonCodeSandboxTemplate 
 
         List<ExecuteMessage> executeMessageList = new ArrayList<>();
         for (String inputArgs : inputList) {
-//            String runCmd = String.format("java -Xmx256m -Dfile.encoding=UTF-8 -cp %s Main %s", userCodeParentPath, inputArgs);
-            String runCmd = String.format("java -Xmx256m -Dfile.encoding=UTF-8 -cp %s Main %s", userCodeParentPath, inputArgs);
+            // String runCmd = String.format("java -Xmx256m -Dfile.encoding=UTF-8 -cp %s Main %s", userCodeParentPath, inputArgs);
+            String runCmd = String.format("java -Xmx256m -Dfile.encoding=UTF-8 -cp %s Main", userCodeParentPath);
+            StopWatch stopWatch = new StopWatch();
+            stopWatch.start();
             try {
                 Process runProcess = Runtime.getRuntime().exec(runCmd);
                 // 超时控制
-                new Thread(() -> {
+                Thread thread = new Thread(() -> {
                     try {
                         Thread.sleep(TIME_OUT);
                         log.info("超时了，中断");
@@ -120,15 +125,26 @@ public abstract class JavaCodeSandboxTemplate extends CommonCodeSandboxTemplate 
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                }).start();
-                ExecuteMessage executeMessage = ProcessUtils.runProcessAndGetMessage(runProcess, "运行");
-                System.out.println("代码程序执行信息：" + executeMessage);
-                if (executeMessage.getExitValue() != 0) {
+                });
+                thread.start();
+                ExecuteMessage executeMessage = null;
+                try {
+                    executeMessage = ProcessUtils.getAcmProcessMessage(runProcess, inputArgs);
+                } catch (IOException e) {
+                    log.error("执行出错 {}", e.getMessage());
+                }
+                if (!thread.isAlive()) {
+                    executeMessage = new ExecuteMessage();
                     executeMessage.setExitValue(1);
                     executeMessage.setMessage(JudgeInfoMessageEnum.RUNTIME_ERROR.getText());
                     executeMessage.setErrorMessage(JudgeInfoMessageEnum.RUNTIME_ERROR.getValue());
                 }
                 executeMessageList.add(executeMessage);
+
+                // 当有用例失败时
+                if (StrUtil.isNotBlank(executeMessage.getErrorMessage())) {
+                    break;
+                }
             } catch (Exception e) {
                 // 未知错误
                 ExecuteMessage executeMessage = new ExecuteMessage();

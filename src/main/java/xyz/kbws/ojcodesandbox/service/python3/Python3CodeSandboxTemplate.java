@@ -251,7 +251,7 @@ public class Python3CodeSandboxTemplate extends CommonCodeSandboxTemplate implem
         List<ExecuteMessage> executeMessageList = new ArrayList<>();
         for (String inputArgs : inputList)
         {
-            String runCmd = String.format("%s %s %s", pythonCmdPrefix, userCodeFileAbsolutePath, inputArgs);
+            String runCmd = String.format("%s %s", pythonCmdPrefix, userCodeFileAbsolutePath);
             try
             {
                 Process runProcess = Runtime.getRuntime().exec(runCmd);
@@ -269,7 +269,7 @@ public class Python3CodeSandboxTemplate extends CommonCodeSandboxTemplate implem
                         throw new RuntimeException(e);
                     }
                 }).start();
-                ExecuteMessage executeMessage = ProcessUtils.runProcessAndGetMessage(runProcess, "运行");
+                ExecuteMessage executeMessage = ProcessUtils.getAcmProcessMessage(runProcess, inputArgs);
                 System.out.println("本次运行结果：" + executeMessage);
                 if (executeMessage.getExitValue() != 0)
                 {
