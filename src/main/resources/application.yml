@@ -12,3 +12,10 @@ spring:
 
 server:
   port: 8090
+
+docker:
+  pool:
+    initial-size: 3
+    max-size: 10
+  image:
+    name: openjdk:8-jdk
