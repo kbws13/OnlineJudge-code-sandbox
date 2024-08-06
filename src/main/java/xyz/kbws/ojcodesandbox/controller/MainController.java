@@ -71,7 +71,7 @@ public class MainController {
         }
         String language = executeCodeRequest.getLanguage();
         if (SupportLanguageEnum.JAVA.getValue().equals(language)) {
-            return javaDockerCodeSandBox.executeCode(executeCodeRequest);
+            return javaNativeCodeSandbox.executeCode(executeCodeRequest);
         }
         else if (SupportLanguageEnum.PYTHON3.getValue().equals(language)) {
             return python3NativeCodeSandbox.executeCode(executeCodeRequest);
