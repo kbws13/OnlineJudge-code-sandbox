@@ -102,7 +102,7 @@ public class DockerTaskService {
                 executeMessageList.add(executeMessage);
             }
             return executeMessageList;
-        } catch (InterruptedException | IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return Arrays.asList(createErrorMessage("Error managing container " + containerId, e.getMessage()));
         }
