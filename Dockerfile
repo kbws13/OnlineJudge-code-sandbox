@@ -1,20 +1,50 @@
-# 使用 openjdk 镜像的 8-jdk 版本作为基础镜像
-FROM openjdk:8-jdk
+# 创建 Ubuntu 镜像
+FROM ubuntu:20.04
 
-# 指定工作目录
-WORKDIR /app
+# 修改默认终端为 bash
+SHELL ["/bin/bash", "-c"]
 
-# 将 jar 包添加到工作目录
-ADD target/oj-code-sandbox-0.0.1-SNAPSHOT.jar .
+# 设置为中国国内源
+RUN sed -i s@/ports.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
+RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
+RUN sed -i s@/security.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
 
-# 暴露端口
-EXPOSE 8090
+RUN apt-get clean
 
-# 在镜像中运行命令，更新软件包列表并安装 Python3
-RUN apt-get update && apt-get install -y python3
+# 更新镜像到最新的包
+RUN apt-get update
+RUN apt-get update -y
 
-# 设置容器的时区为 Asia/Shanghai，并将其复制到 /etc/localtime 文件，同时设置时区信息到 /etc/timezone 文件
-RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo 'Asia/Shanghai' >/etc/timezone
+# 安装需要的包
+RUN apt-get install software-properties-common -y
+RUN apt-get install zip unzip curl wget tar -y
 
-# 启动命令
-ENTRYPOINT ["java","-jar","/app/oj-backend-user-service-0.0.1-SNAPSHOT.jar","--spring.profiles.active=prod"]
+# 安装 Python
+RUN apt-get install python python3-pip -y
+
+# 安装 C
+RUN apt-get install gcc -y
+
+# 安装 C++
+RUN apt-get install g++ -y
+
+# 安装 Java
+RUN apt-get install default-jdk -y
+RUN apt-get install default-jre -y
+
+# 安装 Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
+RUN apt-get install nodejs -y
+
+# 安装 Go
+RUN apt-get install golang -y
+ENV GOCACHE /box
+ENV GOTMPDIR /box
+
+# 更新包
+RUN apt-get clean -y
+RUN apt-get autoclean -y
+RUN apt-get autoremove -y
+
+# 设置默认工作目录
+WORKDIR /box
