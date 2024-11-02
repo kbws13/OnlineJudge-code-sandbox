@@ -1,21 +1,4 @@
 # 公共配置文件
 spring:
-  application:
-    name: K-OJ
-
   banner:
     location: static/banner.txt
-  # 支持 swagger3
-  mvc:
-    pathmatch:
-      matching-strategy: ant_path_matcher
-
-server:
-  port: 8090
-
-docker:
-  pool:
-    initial-size: 3
-    max-size: 10
-  image:
-    name: openjdk:8-jdk
