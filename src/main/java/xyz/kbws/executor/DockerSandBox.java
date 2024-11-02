@@ -10,13 +10,17 @@ import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.StreamType;
 import com.github.dockerjava.core.DockerClientBuilder;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author kbws
@@ -24,19 +28,43 @@ import java.util.UUID;
  * @description:
  */
 @Slf4j
+@Data
+@ConfigurationProperties(prefix = "codesandbox.config")
+@Configuration
 public class DockerSandBox {
 
     private static final DockerClient DOCKER_CLIENT = DockerClientBuilder.getInstance().build();
 
     /**
+     * 代码沙箱的镜像，Dockerfile 构建的镜像名，默认为 codesandbox:latest
+     */
+    private String imageName = "codesandbox:latest";
+
+    /**
+     * 内存限制，单位为字节，默认为 1024 * 1024 * 60MB
+     */
+    private long memoryLimit = 1024 * 1024 * 60;
+
+    private long memorySwap = 0;
+
+    /**
+     * 最大可执行的 CPU 数
+     */
+    private long cpuCount = 1;
+
+    private long timeoutLimit = 1;
+
+    private TimeUnit timeUnit = TimeUnit.SECONDS;
+
+    /**
      * 创建容器
      */
-    private static String createContainer(String codeFile) {
-        CreateContainerCmd createContainerCmd = DOCKER_CLIENT.createContainerCmd("codesandbox:latest");
+    private String createContainer(String codeFile) {
+        CreateContainerCmd createContainerCmd = DOCKER_CLIENT.createContainerCmd(imageName);
         HostConfig hostConfig = new HostConfig();
-        hostConfig.withMemory(60 * 1000 * 1000L);
-        hostConfig.withMemorySwap(0L);
-        hostConfig.withCpuCount(1L);
+        hostConfig.withMemory(memoryLimit);
+        hostConfig.withMemorySwap(memorySwap);
+        hostConfig.withCpuCount(cpuCount);
 
         CreateContainerResponse createContainerResponse = createContainerCmd
                 .withHostConfig(hostConfig)
@@ -62,7 +90,7 @@ public class DockerSandBox {
     /**
      * 执行命令
      */
-    private static ExecuteMessage execCmd(String containerId, String[] cmd) {
+    private ExecuteMessage execCmd(String containerId, String[] cmd) {
         // 正常返回信息
         ByteArrayOutputStream resultStream = new ByteArrayOutputStream();
         // 错误信息
@@ -70,7 +98,16 @@ public class DockerSandBox {
 
         // 结果
         final boolean[] result = {true};
+        final boolean[] timeout = {true};
         try (ResultCallback.Adapter<Frame> frameAdapter = new ResultCallback.Adapter<Frame>(){
+
+            @Override
+            public void onComplete(){
+                // 是否超时
+                timeout[0] = false;
+                super.onComplete();
+            }
+
             @Override
             public void onNext(Frame frame) {
                 StreamType streamType = frame.getStreamType();
@@ -84,7 +121,6 @@ public class DockerSandBox {
                     }
                 } else {
                     try {
-                        result[0] = true;
                         resultStream.write(payLoad);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
@@ -100,7 +136,17 @@ public class DockerSandBox {
                     .withAttachStdout(true)
                     .exec();
             String execId = execCreateCmdResponse.getId();
-            DOCKER_CLIENT.execStartCmd(execId).exec(frameAdapter).awaitCompletion();
+            DOCKER_CLIENT.execStartCmd(execId).exec(frameAdapter).awaitCompletion(timeoutLimit, timeUnit);
+
+            // 超时
+            if (timeout[0]) {
+                return ExecuteMessage
+                        .builder()
+                        .success(false)
+                        .errorMessage("执行超时")
+                        .build();
+            }
+
             return ExecuteMessage
                     .builder()
                     .success(result[0])
@@ -112,7 +158,7 @@ public class DockerSandBox {
             return ExecuteMessage
                     .builder()
                     .success(false)
-                    .errorMessage(errorResultStream.toString())
+                    .errorMessage(e.getMessage())
                     .build();
         }
     }
@@ -132,7 +178,7 @@ public class DockerSandBox {
     /**
      * 执行代码
      */
-    public static ExecuteMessage execute(LanguageCmdEnum languageCmdEnum, String code) {
+    public ExecuteMessage execute(LanguageCmdEnum languageCmdEnum, String code) {
         // 写入文件
         String userDir = System.getProperty("user.dir");
         String language = languageCmdEnum.getLanguage();
