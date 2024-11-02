@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -167,12 +168,14 @@ public class DockerSandBox {
      * 清理文件和容器
      */
     private static void cleanFileAndContainer(String userCodePath, String containerId) {
-        // 清理临时目录
-        FileUtil.del(userCodePath);
+        CompletableFuture.runAsync(() -> {
+            // 清理临时目录
+            FileUtil.del(userCodePath);
 
-        // 关闭并删除容器
-        DOCKER_CLIENT.stopContainerCmd(containerId).exec();
-        DOCKER_CLIENT.removeContainerCmd(containerId).exec();
+            // 关闭并删除容器
+            DOCKER_CLIENT.stopContainerCmd(containerId).exec();
+            DOCKER_CLIENT.removeContainerCmd(containerId).exec();
+        });
     }
 
     /**
