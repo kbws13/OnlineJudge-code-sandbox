@@ -1,4 +1,4 @@
-package xyz.kbws.executor;
+package xyz.kbws.enums;
 
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;

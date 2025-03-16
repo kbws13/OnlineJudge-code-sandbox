@@ -2,9 +2,8 @@ package xyz.kbws;
 
 import cn.hutool.core.io.resource.ResourceUtil;
 import org.junit.jupiter.api.Test;
-import xyz.kbws.executor.DockerSandBox;
-import xyz.kbws.executor.ExecuteMessage;
-import xyz.kbws.executor.LanguageCmdEnum;
+import xyz.kbws.entity.ExecuteMessage;
+import xyz.kbws.enums.LanguageCmdEnum;
 
 import java.nio.charset.StandardCharsets;
 
